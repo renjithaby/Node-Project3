@@ -1,0 +1,9 @@
+extends layout
+
+block content
+    h1= title
+    form#formAddUser(name="addaddress",method="post",action="/addaddress")
+        input#inputUserID(type="text",placeholder=loginID, name="loginid",value=loginID)
+        input#inputUserName(type="text", placeholder="name", name="name")
+        input#inputUserPassword(type="text", placeholder="currentaddress", name="currentaddress")
+        button#btnSubmit(type="submit") submit

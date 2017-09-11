@@ -1,0 +1,26 @@
+
+
+
+extends layout
+
+
+block content
+    h1.
+        User List
+    ul
+        each user, i in userlist
+            li
+                a(href="mailto:#{user.email}")= user.username
+                h1=user.email
+                form( method='post',action='/removeuser?id=#{user._id}')
+                    input.btn.btn-danger.pull-right(type='submit', value='Delete1')
+
+//- folowing code for adding javascript functionality in jade
+    script.
+       var something = function(id) {
+           console.log('something')
+            console.log(id)
+            /*
+               button(onClick='something("#{user._id}")') Delete
+               window.location.href = '/removeuser?id='+id */
+           }
