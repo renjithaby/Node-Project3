@@ -10,15 +10,6 @@ router.get('/', function (req, res, next) {
 });
 
 
-
-
-
-/* GET New User page. */
-router.get('/login', function (req, res) {
-    res.render('login', {title: ' Sign In'});
-});
-
-
 /*let userData = {id: "1", username: "rr", password: "rr",
  addressList: [{id: "1", name: "friend1", currentAddress:"address1"},
  {id: "2", name: "friend2",currentAddress:"address2"}]};*/
@@ -39,13 +30,13 @@ router.post('/addarticle', function (req, res) {
         title: article.title,
         content:article.content,
         likes: 0,
-        author:article.author,
+        authorId:article.authorId,
         time:Date.now(),
         comments:[]
     }
  console.log(newArticle);
     // Set our collection
-    var collection = db.get('articlecollection');
+    var collection = db.get('articlecollection1');
 
 
 
@@ -54,7 +45,7 @@ router.post('/addarticle', function (req, res) {
         "title": newArticle.title,
         "content":newArticle .content,
         "likes": 0,
-        "author":newArticle .author,
+        "authorId":newArticle.authorId,
         "time":Date.now(),
         "comments":[]
     }, function (err, doc) {
@@ -71,7 +62,34 @@ router.post('/addarticle', function (req, res) {
 });
 
 
-router.get('/getglobalefeed', function (req, res) {
+
+router.post('/removearticle', function (req, res) {
+
+    // Set our internal DB variable
+    var db = req.db;
+    //res.redirect("/userlist1");
+    // Get our form values. These rely on the "name" attributes
+    var articleid = req.body.articleid;
+
+
+    // Set our collection
+    var collection = db.get('articlecollection1');
+
+    // Submit to the DB
+    collection.remove({_id: articleid}, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send("There was a problem adding the information to the database.");
+        }
+        else {
+            // And forward to success page
+             res.json({result: "success"});
+        }
+    });
+});
+
+
+router.get('/getglobalfeed', function (req, res) {
 
     // Set our internal DB variable
     var db = req.db;
@@ -80,7 +98,7 @@ router.get('/getglobalefeed', function (req, res) {
     var article = req.body.type;
 
     // Set our collection
-    var collection = db.get('articlecollection');
+    var collection = db.get('articlecollection1');
 
     // Submit to the DB
     collection.find({},{limit:5, sort:{time:-1}}, function (err, docs) {
@@ -92,13 +110,13 @@ router.get('/getglobalefeed', function (req, res) {
         else {
             // And forward to success page
             console.log(docs);
-            res.json({result: "article added successfully", article : docs})
+            res.json({result: "success", article : docs})
         }
     });
 });
 
 
-router.get('/getuserarticles', function (req, res) {
+router.post('/getuserarticles', function (req, res) {
 
     // Set our internal DB variable
     var db = req.db;
@@ -106,11 +124,11 @@ router.get('/getuserarticles', function (req, res) {
     // Get our form values. These rely on the "name" attributes
 
     // Set our collection
-    var collection = db.get('articlecollection');
+    var collection = db.get('articlecollection1');
 
 
     // Submit to the DB
-    collection.find({_id:req.body.userid},{limit:2, sort:{time:-1}}, function (err, docs) {
+    collection.find({authorId:req.body.userid},{limit:2, sort:{time:-1}}, function (err, docs) {
 
         if (err) {
             // If it failed, return error
@@ -119,25 +137,25 @@ router.get('/getuserarticles', function (req, res) {
         else {
             // And forward to success page
             console.log(docs);
-            res.json({result: "article added successfully", article : docs})
+            res.json({result: "success", article : docs})
         }
     });
 });
 
 
-router.get('/getyourfeed', function (req, res) {
+router.post('/getyourfeed', function (req, res) {
 
     // Set our internal DB variable
     var db = req.db;
 
     // Get our form values. These rely on the "name" attributes
-    var id = req.body.id;
-    var usercollection = db.get('usercollection');
+    var id = req.body.userid;
+    var usercollection = db.get('usercollection1');
     // Set our collection
-    var collection = db.get('articlecollection');
+    var collection = db.get('articlecollection1');
 
         // Submit to the DB
-    usercollection.find({_id:req.body.id},{}, function (err, docs) {
+    usercollection.find({_id:id},{}, function (err, docs) {
 
         if (err) {
             // If it failed, return error
@@ -147,7 +165,18 @@ router.get('/getyourfeed', function (req, res) {
             // And forward to success page
             console.log(docs[0].following);
                // Submit to the DB
-            collection.find({ "_id": "59b698be8e920a53fafd7a52","_id": "59b6b36b238bf2558572f2f2"},{limit:10, sort:{time:-1}}, function (err, docs) {
+            // send empty array if there is no following
+           if(!docs[0].following.length>0){
+                 res.send({result:"success",article : []});
+           }
+
+
+        }
+    }).then((docs) => {
+
+
+       // docs[0].following = [{ "author": "59b698be8e920a53fafd7a52"},{"author": "59b6b36b238bf2558572f2f2"}];
+         collection.find({$or :docs[0].following},{limit:4, sort:{time:-1}}, function (err, docs) {
 
                 if (err) {
                     // If it failed, return error
@@ -160,8 +189,7 @@ router.get('/getyourfeed', function (req, res) {
                 }
             });
 
-        }
-    });
+    })
 
 
 });
@@ -171,7 +199,7 @@ router.get('/getyourfeed', function (req, res) {
 /* GET Userlist page. */
 router.get('/userlist', function (req, res) {
     var db = req.db;
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
     collection.find({}, {}, function (e, docs) {
          res.render('userlist', {
          "userlist" : docs
@@ -181,50 +209,10 @@ router.get('/userlist', function (req, res) {
     });
 });
 
-/* GET New User page. */
-router.get('/newuser', function (req, res) {
-
-
-    res.render('newuser', {title: 'Add New User'});
-});
-
-router.get('/addaddress', function (req, res) {
-
-
-    res.render('addaddress', {title: 'Add New Address', loginID: loginId});
-});
-
-
-/* POST to Add User Service */
-
-router.post('/removeuser', function (req, res) {
 
 
 
-    // Set our internal DB variable
-    var db = req.db;
-    console.log(req.query.id);
-    //res.redirect("/userlist1");
-    // Get our form values. These rely on the "name" attributes
-    var id = req.query.id;
-
-
-    // Set our collection
-    var collection = db.get('usercollection');
-
-    // Submit to the DB
-    collection.remove({"_id": id}, function (err, doc) {
-        if (err) {
-            // If it failed, return error
-            res.send("There was a problem adding the information to the database.");
-        }
-        else {
-            // And forward to success page
-            res.redirect("userlist");
-        }
-    });
-});
-
+/*
 
 router.post('/addaddress', function (req, res) {
 
@@ -240,7 +228,7 @@ router.post('/addaddress', function (req, res) {
     console.log("id...........");
     console.log(id);
     // Set our collection
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
 
 
     collection.update(
@@ -280,14 +268,14 @@ router.post('/addaddress', function (req, res) {
 
 
 });
-
+*/
 
 /*db.students.update(
     { _id: 4, "grades.grade": 85 },
     { $set: { "grades.$.std" : 6 } }
 )*/
 
-
+/*
 router.post('/updateaddress', function (req, res) {
 
    // req.body = {loginid:"59a67d114c0b230f4a639548",addressid:1504093882072,name :"renjith", currentaddress:"renjithadd"};
@@ -305,7 +293,7 @@ router.post('/updateaddress', function (req, res) {
     console.log(addressId);
     console.log(currentAddress);
     // Set our collection
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
 
 
     collection.update(
@@ -345,7 +333,7 @@ router.post('/updateaddress', function (req, res) {
 
 
 });
-
+*/
 /*
 db.survey.update(
     { },
@@ -353,6 +341,8 @@ db.survey.update(
     { multi: true }
 )
 */
+
+/*
 router.post('/removeaddress', function (req, res) {
 
     //req.body = {loginid:"59a67d114c0b230f4a639548",addressid:1504093406891};
@@ -364,7 +354,7 @@ router.post('/removeaddress', function (req, res) {
     var addressId =req.body.addressid;
 
     // Set our collection
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
 
 
     collection.update(
@@ -406,18 +396,6 @@ router.post('/removeaddress', function (req, res) {
 
 });
 
-/* GET Userlist page. */
-router.get('/userlist', function (req, res) {
-    var db = req.db;
-    var collection = db.get('usercollection');
-    collection.find({}, {}, function (e, docs) {
-        /* res.render('userlist', {
-         "userlist" : docs
-         });*/
-
-        res.send({"userlist": docs});
-    });
-});
 
 
 
@@ -427,4 +405,6 @@ function helloo() {
     console.log("you calle dme");
 }
 
+
+*/
     module.exports = router;

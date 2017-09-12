@@ -29,7 +29,7 @@ router.post('/adduser', function (req, res) {
     var userEmail = req.body.email;
 
     // Set our collection
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
 
     // Submit to the DB
     collection.insert({
@@ -50,6 +50,35 @@ router.post('/adduser', function (req, res) {
     });
 });
 
+/* POST to Add User Service */
+
+router.post('/removeuser', function (req, res) {
+
+
+
+    // Set our internal DB variable
+    var db = req.db;
+    //res.redirect("/userlist1");
+    // Get our form values. These rely on the "name" attributes
+    var id = req.body.userid;
+
+
+    // Set our collection
+    var collection = db.get('usercollection1');
+
+    // Submit to the DB
+    collection.remove({"_id": id}, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send("There was a problem adding the information to the database.");
+        }
+        else {
+            // And forward to success page
+            res.redirect("userlist");
+        }
+    });
+});
+
 
 // route to authenticate a user (POST http://localhost:8080/api/authenticate)
 router.post('/authenticate', function(req, res) {
@@ -58,7 +87,7 @@ router.post('/authenticate', function(req, res) {
 	var app = req.app;
 	var db = req.db;
 
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
     // Submit to the DB
     collection.find({
             "username": req.body.username
@@ -101,7 +130,7 @@ router.post('/authenticate', function(req, res) {
 router.get('/userlist', function (req, res) {
     var db = req.db;
 
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
        collection.find({}, {}, function (e, docs) {
         /* res.render('userlist', {
          "userlist" : docs
@@ -116,12 +145,12 @@ router.post('/addfollowing', function (req, res) {
     var db = req.db;
     var userId = req.body.userid;
     var followId =  req.body.followid;
-    var collection = db.get('usercollection');
+    var collection = db.get('usercollection1');
 
 
     collection.update(
         {_id: userId},
-        {$push: {following: {"_id":followId}}}, function (e, docs) {
+        {$push: {following: {"authorId":followId}}}, function (e, docs) {
         /* res.render('userlist', {
          "userlist" : docs
          });*/
@@ -130,50 +159,23 @@ router.post('/addfollowing', function (req, res) {
 });
 
 
-router.post('/getyourfeed', function (req, res) {
-
-    // Set our internal DB variable
+router.post('/removefollowing', function (req, res) {
     var db = req.db;
-
-    // Get our form values. These rely on the "name" attributes
-    var id = req.body.userid;
-    var usercollection = db.get('usercollection');
-    // Set our collection
-    var collection = db.get('articlecollection');
-
-        // Submit to the DB
-    usercollection.find({_id:id},{}, function (err, docs) {
-
-        if (err) {
-            // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
-        }
-        else {
-            // And forward to success page
-            console.log(docs[0].following);
-               // Submit to the DB
+    var userId = req.body.userid;
+    var followId =  req.body.followid;
+    var collection = db.get('usercollection1');
 
 
-        }
-    }).then((docs) => {
-
-        docs[0].following = [{ "author": "59b698be8e920a53fafd7a52"},{"author": "59b6b36b238bf2558572f2f2"}];
-         collection.find({$or :docs[0].following},{limit:4, sort:{time:-1}}, function (err, docs) {
-
-                if (err) {
-                    // If it failed, return error
-                    res.send({result:"failed",details:"There was a problem adding the information to the database."});
-                }
-                else {
-                    // And forward to success page
-                    console.log(docs);
-                    res.json({result: "article added successfully", article : docs})
-                }
-            });
-
-    })
-
-
+    collection.update(
+        {_id: userId},
+        {$pull: {following: {"authorId":followId}}}, function (e, docs) {
+        /* res.render('userlist', {
+         "userlist" : docs
+         });*/
+        res.send({"user": docs});
+    });
 });
+
+
 
 module.exports = router;
