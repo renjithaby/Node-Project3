@@ -82,8 +82,8 @@ router.post('/removeuser', function (req, res) {
 
 // route to authenticate a user (POST http://localhost:8080/api/authenticate)
 router.post('/authenticate', function(req, res) {
-	console.log("req.body.name");
-	console.log(req.body.name);
+	//console.log("req.body.name");
+	//console.log(req.body.name);
 	var app = req.app;
 	var db = req.db;
 
