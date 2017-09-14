@@ -40,11 +40,11 @@ router.post('/adduser', function (req, res) {
     }, function (err, doc) {
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
-            res.send({result: "registersuccess"});
+            res.send({result: "success"});
            //router.post('/authenticate'
         }
     });
@@ -70,7 +70,7 @@ router.post('/removeuser', function (req, res) {
     collection.remove({"_id": id}, function (err, doc) {
         if (err) {
             // If it failed, return error
-            res.send("There was a problem adding the information to the database.");
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
@@ -96,7 +96,7 @@ router.post('/authenticate', function(req, res) {
             if (err) throw err;
 
             if (!user[0]) {
-                res.json({ success: false, message: 'Authentication failed. User not found.' });
+                res.json({ result: "failed", message: 'Authentication failed. User not found.' });
             } else if (user[0]) {
                 console.log("user.password");
                 console.log(user[0].password);
@@ -104,7 +104,7 @@ router.post('/authenticate', function(req, res) {
                 console.log(req.body.password);
                 // check if password matches
                 if (user[0].password != req.body.password) {
-                    res.json({ success: false, message: 'Authentication failed. Wrong password.' });
+                    res.json({ result: "failed", message: 'Authentication failed. Wrong password.' });
                 } else {
 
                     // if user is found and password is right
@@ -135,7 +135,10 @@ router.get('/userlist', function (req, res) {
         /* res.render('userlist', {
          "userlist" : docs
          });*/
-
+        console.log("hiii");
+        if(e){
+            res.send({result:"failed"});
+        }
         res.send({"userlist": docs});
     });
 });

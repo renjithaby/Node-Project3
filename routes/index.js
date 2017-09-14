@@ -20,17 +20,13 @@ router.post('/addarticle', function (req, res) {
     var db = req.db;
 
     // Get our form values. These rely on the "name" attributes
-    var article = req.body.article;
-    console.log("req.body.article");
-    console.log(req.body.article.title);
-    console.log(req.body);
 
        var newArticle = {
 
-        title: article.title,
-        content:article.content,
+        title: req.body.title,
+        content:req.body.content,
         likes: 0,
-        authorId:article.authorId,
+        authorId:req.body.authorId,
         time:Date.now(),
         comments:[]
     }
@@ -51,12 +47,12 @@ router.post('/addarticle', function (req, res) {
     }, function (err, doc) {
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
+            res.send({result:"failed",messsage:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
             console.log(doc);
-            res.json({result: "article added successfully", article : doc})
+            res.json({result: "success", article : doc})
         }
     });
 });
@@ -79,7 +75,7 @@ router.post('/removearticle', function (req, res) {
     collection.remove({_id: articleid}, function (err, doc) {
         if (err) {
             // If it failed, return error
-            res.send("There was a problem adding the information to the database.");
+            res.send({result:"failed",messsage:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
@@ -105,7 +101,7 @@ router.get('/getglobalfeed', function (req, res) {
 
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
@@ -132,7 +128,7 @@ router.post('/getuserarticles', function (req, res) {
 
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
@@ -159,7 +155,7 @@ router.post('/getyourfeed', function (req, res) {
 
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",details:"There was a problem adding the information to the database."});
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
@@ -180,12 +176,12 @@ router.post('/getyourfeed', function (req, res) {
 
                 if (err) {
                     // If it failed, return error
-                    res.send({result:"failed",details:"There was a problem adding the information to the database."});
+                    res.send({result:"failed",message:"There was a problem adding the information to the database."});
                 }
                 else {
                     // And forward to success page
                     console.log(docs);
-                    res.json({result: "article added successfully", article : docs})
+                    res.json({result: "success", article : docs})
                 }
             });
 
