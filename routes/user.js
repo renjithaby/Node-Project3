@@ -147,17 +147,30 @@ router.get('/userlist', function (req, res) {
 router.post('/addfollowing', function (req, res) {
     var db = req.db;
     var userId = req.body.userid;
-    var followId =  req.body.followid;
+    var authorId = req.body.authorid;
     var collection = db.get('usercollection1');
 
 
     collection.update(
         {_id: userId},
-        {$push: {following: {"authorId":followId}}}, function (e, docs) {
-        /* res.render('userlist', {
-         "userlist" : docs
-         });*/
-        res.send({"user": docs});
+        {$push: {following: {"authorId":authorId}}}, function (err, docs) {
+             if(err) {
+                res.send({result: "failed1", message: "There was a problem adding the information to the database."});
+             }
+        }).then(() => {
+            collection.find({_id:userId}, function (err, docs) {
+
+                if (err) {
+                    // If it failed, return error
+                    res.send({result:"failed",message:"There was a problem adding the information to the database."});
+                }
+                else {
+                    // And forward to success page
+                    console.log(docs);
+                    res.json({result: "success", user : docs})
+                }
+            });
+
     });
 });
 
@@ -165,17 +178,31 @@ router.post('/addfollowing', function (req, res) {
 router.post('/removefollowing', function (req, res) {
     var db = req.db;
     var userId = req.body.userid;
-    var followId =  req.body.followid;
+    var authorId =  req.body.authorid;
     var collection = db.get('usercollection1');
 
 
     collection.update(
         {_id: userId},
-        {$pull: {following: {"authorId":followId}}}, function (e, docs) {
-        /* res.render('userlist', {
-         "userlist" : docs
-         });*/
-        res.send({"user": docs});
+        {$pull: {following: {"authorId":authorId}}}, function (err, docs) {
+            if(err) {
+                res.send({result: "failed1", message: "There was a problem adding the information to the database."});
+            }
+            //res.send({"user": docs});
+        }).then(() => {
+            collection.find({_id:userId}, function (err, docs) {
+
+                if (err) {
+                    // If it failed, return error
+                    res.send({result:"failed1",message:"There was a problem adding the information to the database."});
+                }
+                else {
+                    // And forward to success page
+                    console.log(docs);
+                    res.json({result: "success", user : docs})
+                }
+            });
+
     });
 });
 

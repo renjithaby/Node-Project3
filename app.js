@@ -14,7 +14,7 @@ var user = require('./routes/user');
 var mongo = require('mongodb');
 var monk = require('monk');
 //var db = monk('localhost:27017/nodetest1');
-var db = monk('mongodb://127.0.0.1:27017');
+var db = monk('mongodb://127.0.0.1:27017/nodetest4');
 var jwt    = require('jsonwebtoken');
 
 

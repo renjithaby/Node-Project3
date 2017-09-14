@@ -26,7 +26,8 @@ router.post('/addarticle', function (req, res) {
         title: req.body.title,
         content:req.body.content,
         likes: 0,
-        authorId:req.body.authorId,
+        authorId:req.body.author.authorId,
+        author:req.body.author,
         time:Date.now(),
         comments:[]
     }
@@ -41,7 +42,8 @@ router.post('/addarticle', function (req, res) {
         "title": newArticle.title,
         "content":newArticle .content,
         "likes": 0,
-        "authorId":newArticle.authorId,
+        "authorId":newArticle.author.authorId,
+        "author":newArticle.author,
         "time":Date.now(),
         "comments":[]
     }, function (err, doc) {
@@ -121,10 +123,9 @@ router.post('/getuserarticles', function (req, res) {
 
     // Set our collection
     var collection = db.get('articlecollection1');
-
-
+        //{'author.authorId':req.body.userid}
     // Submit to the DB
-    collection.find({authorId:req.body.userid},{limit:2, sort:{time:-1}}, function (err, docs) {
+    collection.find({authorId :req.body.userid},{limit:2, sort:{time:-1}}, function (err, docs) {
 
         if (err) {
             // If it failed, return error
@@ -172,6 +173,7 @@ router.post('/getyourfeed', function (req, res) {
 
 
        // docs[0].following = [{ "author": "59b698be8e920a53fafd7a52"},{"author": "59b6b36b238bf2558572f2f2"}];
+        // {$or :docs[0].following}
          collection.find({$or :docs[0].following},{limit:4, sort:{time:-1}}, function (err, docs) {
 
                 if (err) {
