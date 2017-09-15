@@ -167,7 +167,7 @@ router.post('/addfollowing', function (req, res) {
                 else {
                     // And forward to success page
                     console.log(docs);
-                    res.json({result: "success", user : docs})
+                    res.json({result: "success", user : docs[0]})
                 }
             });
 
@@ -199,7 +199,7 @@ router.post('/removefollowing', function (req, res) {
                 else {
                     // And forward to success page
                     console.log(docs);
-                    res.json({result: "success", user : docs})
+                    res.json({result: "success", user : docs[0]})
                 }
             });
 
