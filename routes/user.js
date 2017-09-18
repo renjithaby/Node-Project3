@@ -74,7 +74,7 @@ router.post('/removeuser', function (req, res) {
         }
         else {
             // And forward to success page
-            res.redirect("userlist");
+           // res.redirect("userlist");
         }
     });
 });
@@ -203,6 +203,165 @@ router.post('/removefollowing', function (req, res) {
                 }
             });
 
+    });
+});
+
+
+router.post('/addlike', function (req, res) {
+    var db = req.db;
+    var userId = req.body.userid;
+    var articleId = req.body.articleid;
+    var time = Date.now();
+    var collection = db.get('likecollection1');
+
+
+    // Submit to the DB
+    collection.insert({
+        "userid": userId,
+        "articleid": articleId,
+        "time":time
+    }, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
+        }
+        else {
+            collection.find({userid: userId}, {sort:{time:-1}}, function (err, docs) {
+                console.log(docs);
+                if (err) {
+                    // If it failed, return error
+                    res.send({result: "failed", message: "There was a problem adding the information to the database."});
+                }
+                else {
+                    res.send({result: "success", likes: docs});
+                }
+            });
+        }
+    });
+});
+
+router.post('/removelike', function (req, res) {
+    var db = req.db;
+    var userId = req.body.userid;
+    var articleId = req.body.articleid;
+    var collection = db.get('likecollection1');
+
+
+    collection.remove({"userid": userId,"articleid":articleId}, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
+        }
+        else {
+            collection.find({userid: userId}, {sort:{time:-1}}, function (err, docs) {
+                console.log(docs);
+                if (err) {
+                    // If it failed, return error
+                    res.send({result: "failed", message: "There was a problem adding the information to the database."});
+                }
+                else {
+                    res.send({result: "success", likes: docs});
+                }
+            });
+
+        }
+    });
+});
+
+router.post('/getuserlikes', function (req, res) {
+    var db = req.db;
+    var userId = req.body.userid;
+    var collection = db.get('likecollection1');
+    //userid: userId
+    collection.find({}, {sort:{time:-1}}, function (err, docs) {
+
+        if (err) {
+            // If it failed, return error
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
+        }
+        else {
+                res.send({result: "success", likes: docs});
+        }
+    });
+});
+
+router.post('/addcomment', function (req, res) {
+    var db = req.db;
+    var user = req.body.user;
+    var articleId = req.body.articleid;
+    var comment = req.body.comment;
+    var time = Date.now();
+    var collection = db.get('commentcollection1');
+
+
+    // Submit to the DB
+    collection.insert({
+        "user": user,
+        "articleid": articleId,
+        "comment": comment,
+        "time":time
+    }, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
+        }
+        else {
+            collection.find({articleid: articleId}, {limit:5, sort:{time:-1}}, function (err, docs) {
+                console.log(docs);
+                if (err) {
+                    // If it failed, return error
+                    res.send({result: "failed", message: "There was a problem adding the information to the database."});
+                }
+                else {
+                    res.send({result: "success",comments: docs});
+                }
+            });
+        }
+    });
+});
+
+router.post('/removecomment', function (req, res) {
+    var db = req.db;
+    var commentId = req.body.commentid;
+    var articleId = req.body.articleid;
+    var collection = db.get('commentcollection1');
+
+
+    collection.remove({"_id": commentId}, function (err, doc) {
+        if (err) {
+            // If it failed, return error
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
+        }
+        else {
+            collection.find({articleid: articleId}, {limit:15, sort:{time:-1}}, function (err, docs) {
+                console.log(docs);
+                if (err) {
+                    // If it failed, return error
+                    res.send({result: "failed", message: "There was a problem adding the information to the database."});
+                }
+                else {
+                    res.send({result: "success", comments: docs});
+                }
+            });
+
+        }
+    });
+});
+
+router.post('/getarticlecomments', function (req, res) {
+    var db = req.db;
+    var articleId = req.body.articleid;
+    var collection = db.get('commentcollection1');
+
+    collection.find({articleid: articleId}, {limit:5, sort:{time:-1}}, function (err, docs) {
+
+        if (err) {
+            // If it failed, return error
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
+        }
+        else {
+            res.send({result: "success", comments: docs});
+        }
     });
 });
 

@@ -125,7 +125,7 @@ router.post('/getuserarticles', function (req, res) {
     var collection = db.get('articlecollection1');
         //{'author.authorId':req.body.userid}
     // Submit to the DB
-    collection.find({authorId :req.body.userid},{limit:2, sort:{time:-1}}, function (err, docs) {
+    collection.find({authorId :req.body.userid},{limit:5, sort:{time:-1}}, function (err, docs) {
 
         if (err) {
             // If it failed, return error
