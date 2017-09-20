@@ -38,13 +38,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Make our db accessible to our router
 app.use(function(req,res,next){
     req.db = db;
-    console.log(req.body);
-    console.log(req.params);
-    console.log(req.query);
     next();
 });
 
-app.use('/user', user);
+
 app.use('/', index);
 // route middleware to verify a token
 app.use(function(req, res, next) {
@@ -58,7 +55,7 @@ app.use(function(req, res, next) {
     // verifies secret and checks exp
     jwt.verify(token, app.get('superSecret'), function(err, decoded) {
       if (err) {
-        return res.json({ success: false, message: 'Failed to authenticate token.' });
+        return res.json({ result:'failed', message: 'EXPIRED_TOKEN' });
       } else {
         // if everything is good, save to request for use in other routes
         req.decoded = decoded;
@@ -71,15 +68,16 @@ app.use(function(req, res, next) {
     // if there is no token
     // return an error
     return res.status(403).send({
-        success: false,
-        message: 'No token provided.'
+        result:'failed',
+        message: 'NO_TOKEN'
     });
 
   }
 });
 
+app.use('/user', user);
 
-app.use('/', index);
+
 //app.use('/users', users);
 
 // catch 404 and forward to error handler
@@ -102,3 +100,4 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+

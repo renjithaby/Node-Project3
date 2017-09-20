@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+var jwt    = require('jsonwebtoken');
 var loginId = null;
 
 
@@ -10,82 +10,140 @@ router.get('/', function (req, res, next) {
 });
 
 
-/*let userData = {id: "1", username: "rr", password: "rr",
- addressList: [{id: "1", name: "friend1", currentAddress:"address1"},
- {id: "2", name: "friend2",currentAddress:"address2"}]};*/
-/* POST to Add User Service */
-router.post('/addarticle', function (req, res) {
+router.post('/adduser', function (req, res) {
 
     // Set our internal DB variable
     var db = req.db;
 
     // Get our form values. These rely on the "name" attributes
+    var userName = req.body.username;
+    var userPassword = req.body.password;
+    var userEmail = req.body.email;
 
-       var newArticle = {
-
-        title: req.body.title,
-        content:req.body.content,
-        likes: 0,
-        authorId:req.body.author.authorId,
-        author:req.body.author,
-        time:Date.now(),
-        comments:[]
-    }
- console.log(newArticle);
     // Set our collection
-    var collection = db.get('articlecollection1');
-
-
+    var collection = db.get('usercollection1');
 
     // Submit to the DB
     collection.insert({
-        "title": newArticle.title,
-        "content":newArticle .content,
-        "likes": 0,
-        "authorId":newArticle.author.authorId,
-        "author":newArticle.author,
-        "time":Date.now(),
-        "comments":[]
+        "username": userName,
+        "password": userPassword,
+        "email": userEmail,
+        "following":[]
     }, function (err, doc) {
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",messsage:"There was a problem adding the information to the database."});
+            res.send({result:"failed",message:"There was a problem adding the information to the database."});
         }
         else {
             // And forward to success page
-            console.log(doc);
-            res.json({result: "success", article : doc})
+            res.send({result: "success"});
+            //router.post('/authenticate'
         }
     });
 });
 
-
-
-router.post('/removearticle', function (req, res) {
-
-    // Set our internal DB variable
+// route to authenticate a user (POST http://localhost:8080/api/authenticate)
+router.post('/authenticate', function(req, res) {
+    //console.log("req.body.name");
+    //console.log(req.body.name);
+    var app = req.app;
     var db = req.db;
-    //res.redirect("/userlist1");
-    // Get our form values. These rely on the "name" attributes
-    var articleid = req.body.articleid;
 
-
-    // Set our collection
-    var collection = db.get('articlecollection1');
-
+    var collection = db.get('usercollection1');
     // Submit to the DB
-    collection.remove({_id: articleid}, function (err, doc) {
+    collection.find({
+        "username": req.body.username
+    }, function(err, user) {
+
+        if (err) throw err;
+
+        if (!user[0]) {
+            res.json({ result: "failed", message: 'Authentication failed. User not found.' });
+        } else if (user[0]) {
+            console.log("user.password");
+            console.log(user[0].password);
+            console.log("req.body.password");
+            console.log(req.body.password);
+            // check if password matches
+            if (user[0].password != req.body.password) {
+                res.json({ result: "failed", message: 'Authentication failed. Wrong password.' });
+            } else {
+
+                // if user is found and password is right
+                // create a token
+                var token = jwt.sign(user[0], app.get('superSecret'), {
+                    expiresIn: 1440 // expires in 24 hours
+                });
+                var decoded = jwt.verify(token, app.get('superSecret'));
+                console.log("decoded........");
+                console.log(decoded);
+                // return the information including token as JSON
+                res.json({
+                    success: true,
+                    message: 'Enjoy your token!',
+                    token: token,
+                    user:user[0]
+                });
+            }
+
+        }
+    });
+});
+
+router.post('/getarticlecomments', function (req, res) {
+    var db = req.db;
+    var articleId = req.body.articleid;
+    var collection = db.get('commentcollection1');
+
+    collection.find({articleid: articleId}, {limit:5, sort:{time:-1}}, function (err, docs) {
+
         if (err) {
             // If it failed, return error
-            res.send({result:"failed",messsage:"There was a problem adding the information to the database."});
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
         }
         else {
-            // And forward to success page
-             res.json({result: "success"});
+            res.send({result: "success", comments: docs});
         }
     });
 });
 
+router.post('/getarticlebyid', function (req, res) {
+    var db = req.db;
+    var articleId = req.body.articleid;
+    var collection = db.get('articlecollection1');
+    console.log("getarticlebyid");
+    console.log(articleId);
+
+    collection.find({_id: articleId}, {limit:5, sort:{time:-1}}, function (err, docs) {
+
+        if (err) {
+            // If it failed, return error
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
+        }
+        else {
+            console.log(docs);
+            res.send({result: "success", article: docs[0]});
+        }
+    });
+});
+
+router.post('/getuserbyid', function (req, res) {
+    var db = req.db;
+    var userId = req.body.userid;
+    var collection = db.get('usercollection1');
+
+    collection.find({_id:userId}, {limit:5, sort:{time:-1}}, function (err, docs) {
+
+        if (err) {
+            // If it failed, return error
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
+        }
+        else {
+            console.log(docs);
+            res.send({result: "success", user: docs[0]});
+        }
+    });
+});
 
 router.get('/getglobalfeed', function (req, res) {
 
@@ -113,7 +171,6 @@ router.get('/getglobalfeed', function (req, res) {
     });
 });
 
-
 router.post('/getuserarticles', function (req, res) {
 
     // Set our internal DB variable
@@ -123,7 +180,7 @@ router.post('/getuserarticles', function (req, res) {
 
     // Set our collection
     var collection = db.get('articlecollection1');
-        //{'author.authorId':req.body.userid}
+    //{'author.authorId':req.body.userid}
     // Submit to the DB
     collection.find({authorId :req.body.userid},{limit:5, sort:{time:-1}}, function (err, docs) {
 
@@ -133,65 +190,11 @@ router.post('/getuserarticles', function (req, res) {
         }
         else {
             // And forward to success page
-            console.log(docs);
+
             res.json({result: "success", article : docs})
         }
     });
 });
-
-
-router.post('/getyourfeed', function (req, res) {
-
-    // Set our internal DB variable
-    var db = req.db;
-
-    // Get our form values. These rely on the "name" attributes
-    var id = req.body.userid;
-    var usercollection = db.get('usercollection1');
-    // Set our collection
-    var collection = db.get('articlecollection1');
-
-        // Submit to the DB
-    usercollection.find({_id:id},{}, function (err, docs) {
-
-        if (err) {
-            // If it failed, return error
-            res.send({result:"failed",message:"There was a problem adding the information to the database."});
-        }
-        else {
-            // And forward to success page
-            console.log(docs[0].following);
-               // Submit to the DB
-            // send empty array if there is no following
-           if(!docs[0].following.length>0){
-                 res.send({result:"success",article : []});
-           }
-
-
-        }
-    }).then((docs) => {
-
-
-       // docs[0].following = [{ "author": "59b698be8e920a53fafd7a52"},{"author": "59b6b36b238bf2558572f2f2"}];
-        // {$or :docs[0].following}
-         collection.find({$or :docs[0].following},{limit:4, sort:{time:-1}}, function (err, docs) {
-
-                if (err) {
-                    // If it failed, return error
-                    res.send({result:"failed",message:"There was a problem adding the information to the database."});
-                }
-                else {
-                    // And forward to success page
-                    console.log(docs);
-                    res.json({result: "success", article : docs})
-                }
-            });
-
-    })
-
-
-});
-
 
 
 /* GET Userlist page. */
@@ -207,202 +210,4 @@ router.get('/userlist', function (req, res) {
     });
 });
 
-
-
-
-/*
-
-router.post('/addaddress', function (req, res) {
-
-    // Set our internal DB variable
-    var db = req.db;
-
-    // Get our form values. These rely on the "name" attributes
-    var id = req.body.loginid;
-    var addressId = Date.now();
-    var name = req.body.name;
-    var currentAddress = req.body.currentaddress;
-    var newAddress = {"id": addressId, "name": name, "currentAddress": currentAddress};
-    console.log("id...........");
-    console.log(id);
-    // Set our collection
-    var collection = db.get('usercollection1');
-
-
-    collection.update(
-        {_id: id},
-        {$push: {addressList: newAddress}}
-        , function (err, doc) {
-            if (err) {
-                console.log("failed.....");
-                // If it failed, return error
-                res.send({result :"failed",detail:"There was a problem adding the information to the database."});
-            }
-            else {
-
-                console.log("doc[0]..........");
-                console.log(doc);
-                collection.find({
-                        "_id" : id
-                    },
-                    function (err, doc) {
-                        if (err) {
-                            console.log("doceroor");
-                            // If it failed, return error
-                            res.send({result: "failed", detail:"Incorrect information."});
-                        }
-                        else {
-                            console.log(".....response....");
-                            if (doc.length > 0) {
-                                res.send(doc[0]);
-                                //res.redirect("addaddress");
-                            } else {
-                                res.send({result: "failed", detail:"wrong id"});
-                            }
-                        }
-                    });
-            }
-        });
-
-
-});
-*/
-
-/*db.students.update(
-    { _id: 4, "grades.grade": 85 },
-    { $set: { "grades.$.std" : 6 } }
-)*/
-
-/*
-router.post('/updateaddress', function (req, res) {
-
-   // req.body = {loginid:"59a67d114c0b230f4a639548",addressid:1504093882072,name :"renjith", currentaddress:"renjithadd"};
-    // Set our internal DB variable
-    var db = req.db;
-
-    // Get our form values. These rely on the "name" attributes
-    var id = req.body.loginid;
-    var addressId =req.body.addressid;
-    var name = req.body.name;
-    var currentAddress = req.body.currentaddress;
-    var newAddress = {"id": addressId, "name": name, "currentAddress": currentAddress};
-    console.log("id...........");
-    console.log(id);
-    console.log(addressId);
-    console.log(currentAddress);
-    // Set our collection
-    var collection = db.get('usercollection1');
-
-
-    collection.update(
-        {_id: id,"addressList.id":addressId},
-        { $set: { "addressList.$" : newAddress } }
-       , function (err, doc) {
-            if (err) {
-                console.log("failed.....");
-                // If it failed, return error
-                res.send("There was a problem adding the information to the database.");
-            }
-            else {
-
-                console.log("doc[0]..........");
-                console.log(doc);
-                collection.find({
-                        "_id" : id
-                    },
-                    function (err, doc) {
-                        if (err) {
-                            console.log("doceroor");
-                            // If it failed, return error
-                            res.send("Incorrect information.");
-                        }
-                        else {
-                            console.log(".....response....");
-                            if (doc.length > 0) {
-                                res.send(doc[0]);
-                                //res.redirect("addaddress");
-                            } else {
-                                res.send({result: "failed"});
-                            }
-                        }
-                    });
-            }
-        });
-
-
-});
-*/
-/*
-db.survey.update(
-    { },
-    { $pull: { results: { score: 8 , item: "B" } } },
-    { multi: true }
-)
-*/
-
-/*
-router.post('/removeaddress', function (req, res) {
-
-    //req.body = {loginid:"59a67d114c0b230f4a639548",addressid:1504093406891};
-    // Set our internal DB variable
-    var db = req.db;
-
-    // Get our form values. These rely on the "name" attributes
-    var id = req.body.loginid;
-    var addressId =req.body.addressid;
-
-    // Set our collection
-    var collection = db.get('usercollection1');
-
-
-    collection.update(
-        {_id:id},
-        {$pull:{addressList:{id :addressId}}},
-        { multi: true }
-        , function (err, doc) {
-            if (err) {
-                console.log("failed.....");
-                // If it failed, return error
-                res.send("There was a problem adding the information to the database.");
-            }
-            else {
-
-                console.log("doc[0]..........");
-                console.log(doc);
-                collection.find({
-                        "_id" : id
-                    },
-                    function (err, doc) {
-                        if (err) {
-                            console.log("doceroor");
-                            // If it failed, return error
-                            res.send("Incorrect information.");
-                        }
-                        else {
-                            console.log(".....response....");
-                            if (doc.length > 0) {
-                                res.send(doc[0]);
-                                //res.redirect("addaddress");
-                            } else {
-                                res.send({result: "failed"});
-                            }
-                        }
-                    });
-            }
-        });
-
-
-});
-
-
-
-
-
-function helloo() {
-
-    console.log("you calle dme");
-}
-
-
-*/
-    module.exports = router;
+module.exports = router;
