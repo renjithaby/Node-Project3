@@ -145,6 +145,33 @@ router.post('/getuserbyid', function (req, res) {
     });
 });
 
+
+router.post('/getarticlelikecount', function (req, res) {
+    var db = req.db;
+    var articleId = req.body.articleid;
+    var time = Date.now();
+    var collection = db.get('likecollection1');
+
+    //console.log(collection.find({articleid: articleId}));
+    // Submit to the DB
+    collection.count({articleid: articleId}, function (err, count) {
+
+        if (err) {
+            // If it failed, return error
+            res.send({result: "failed", message: "There was a problem adding the information to the database."});
+        }
+        else {
+            res.send({result: "success", data:{"articleid":articleId,"count": count}});
+        }
+    });
+});
+
+
+
+
+
+
+
 router.get('/getglobalfeed', function (req, res) {
 
     // Set our internal DB variable
